@@ -1,0 +1,7 @@
+TEAM_ID=
+
+PRODUCT_NAME=help_i_cant_sing
+PRODUCT_BUNDLE_IDENTIFIER=io.github.zharotiai.help_i_cant_sing.help_i_cant_sing$(TEAM_ID)
+
+CURRENT_PROJECT_VERSION=1
+MARKETING_VERSION=1.0
