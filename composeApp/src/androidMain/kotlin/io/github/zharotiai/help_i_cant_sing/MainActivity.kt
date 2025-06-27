@@ -4,28 +4,29 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import io.github.zharotiai.help_i_cant_sing.permissions.PermissionManager
-
 import androidx.activity.result.contract.ActivityResultContracts
+import io.github.zharotiai.help_i_cant_sing.permissions.PermissionManager
+import io.github.zharotiai.help_i_cant_sing.permissions.AndroidPermissionHandler
 
 class MainActivity : ComponentActivity() {
+    private lateinit var permissionHandler: AndroidPermissionHandler
+
     private val requestAudioPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
-        // Handle permission result here
-        PermissionManager.onPermissionResult(isGranted)
+        // Call the handler's result method
+        permissionHandler.onRequestPermissionResult(isGranted)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        PermissionManager.setActivity(this, requestAudioPermissionLauncher)
+        // Create and set the handler
+        permissionHandler = AndroidPermissionHandler(this, requestAudioPermissionLauncher)
+        PermissionManager.handler = permissionHandler
 
         setContent {
             App()
@@ -33,8 +34,6 @@ class MainActivity : ComponentActivity() {
         PermissionManager.requestAudioPermission()
     }
 }
-
-
 
 @Preview
 @Composable
