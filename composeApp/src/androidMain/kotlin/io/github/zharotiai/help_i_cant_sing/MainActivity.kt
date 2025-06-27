@@ -11,28 +11,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.zharotiai.help_i_cant_sing.permissions.PermissionManager
 
+import androidx.activity.result.contract.ActivityResultContracts
+
 class MainActivity : ComponentActivity() {
+    private val requestAudioPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        // Handle permission result here
+        PermissionManager.onPermissionResult(isGranted)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
+        PermissionManager.setActivity(this, requestAudioPermissionLauncher)
+
         setContent {
             App()
         }
-        PermissionManager.requestAudioPermission { granted ->
-            // Handle permission result if needed
-        }
+        PermissionManager.requestAudioPermission()
     }
 }
 
-@Composable
-fun App() {
-    MaterialTheme {
-        Surface {
-            Text("Hello, Help I Can't Sing!")
-        }
-    }
-}
+
 
 @Preview
 @Composable
