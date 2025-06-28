@@ -19,6 +19,7 @@ import help_i_cant_sing.composeapp.generated.resources.Res
 import help_i_cant_sing.composeapp.generated.resources.compose_multiplatform
 import io.github.zharotiai.help_i_cant_sing.audio.AudioRecorderViewModel
 import androidx.compose.runtime.collectAsState
+import io.github.zharotiai.help_i_cant_sing.permissions.PermissionManager
 
 @Composable
 fun AudioRecorderControls(viewModel: AudioRecorderViewModel) {
@@ -40,9 +41,13 @@ fun AudioRecorderControls(viewModel: AudioRecorderViewModel) {
 
 @Composable
 @Preview
-fun App(viewModel: AudioRecorderViewModel? = null) {
+fun App(viewModel: AudioRecorderViewModel? = null, permissionManager: PermissionManager? = null) {
     MaterialTheme {
         var showContent by remember { mutableStateOf(false) }
+        // Request audio permission on activation (only if permissionManager is provided)
+        LaunchedEffect(permissionManager) {
+            permissionManager?.requestAudioPermission {}
+        }
         Column(
             modifier = Modifier
                 .safeContentPadding()

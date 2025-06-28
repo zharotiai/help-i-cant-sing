@@ -30,13 +30,13 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
+            linkerOpts("-framework", "AVFoundation")
         }
     }
 
-    jvm("desktop")
 
     sourceSets {
-        val desktopMain by getting
+        val commonMain by getting
 
         androidMain.dependencies {
             implementation(compose.preview)
@@ -54,10 +54,6 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
-        }
-        desktopMain.dependencies {
-            implementation(compose.desktop.currentOs)
-            implementation(libs.kotlinx.coroutinesSwing)
         }
     }
 }
@@ -91,16 +87,4 @@ android {
 
 dependencies {
     debugImplementation(compose.uiTooling)
-}
-
-compose.desktop {
-    application {
-        mainClass = "io.github.zharotiai.help_i_cant_sing.MainKt"
-
-        nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "io.github.zharotiai.help_i_cant_sing"
-            packageVersion = "1.0.0"
-        }
-    }
 }

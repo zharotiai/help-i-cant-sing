@@ -4,4 +4,4 @@ expect class PermissionManager() {
     fun isAudioPermissionGranted(): Boolean
     fun shouldShowRationale(): Boolean
     fun requestAudioPermission(onResult: (Boolean) -> Unit = {})
-} constructor()
+}
