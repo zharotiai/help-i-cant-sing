@@ -9,6 +9,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.activity.result.contract.ActivityResultContracts
 import io.github.zharotiai.help_i_cant_sing.permissions.PermissionManager
 import io.github.zharotiai.help_i_cant_sing.permissions.AndroidPermissionHandler
+import io.github.zharotiai.help_i_cant_sing.audio.AndroidAudioRecorder
+import io.github.zharotiai.help_i_cant_sing.audio.AudioRecorderViewModel
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     private lateinit var permissionHandler: AndroidPermissionHandler
@@ -28,8 +31,13 @@ class MainActivity : ComponentActivity() {
         permissionHandler = AndroidPermissionHandler(this, requestAudioPermissionLauncher)
         PermissionManager.handler = permissionHandler
 
+        // Prepare output file for recording
+        val outputFile = File(cacheDir, "recording.3gp")
+        val recorder = AndroidAudioRecorder(outputFile)
+        val viewModel = AudioRecorderViewModel(recorder)
+
         setContent {
-            App()
+            App(viewModel)
         }
         PermissionManager.requestAudioPermission()
     }

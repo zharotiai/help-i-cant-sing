@@ -17,10 +17,30 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 import help_i_cant_sing.composeapp.generated.resources.Res
 import help_i_cant_sing.composeapp.generated.resources.compose_multiplatform
+import io.github.zharotiai.help_i_cant_sing.audio.AudioRecorderViewModel
+import androidx.compose.runtime.collectAsState
+
+@Composable
+fun AudioRecorderControls(viewModel: AudioRecorderViewModel) {
+    val isRecording by viewModel.isRecording.collectAsState()
+    val isPaused by viewModel.isPaused.collectAsState()
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        if (!isRecording) {
+            Button(onClick = { viewModel.start() }) { Text("Start Recording") }
+        } else {
+            if (!isPaused) {
+                Button(onClick = { viewModel.pause() }) { Text("Pause") }
+            } else {
+                Button(onClick = { viewModel.resume() }) { Text("Resume") }
+            }
+            Button(onClick = { viewModel.stop() }) { Text("Stop") }
+        }
+    }
+}
 
 @Composable
 @Preview
-fun App() {
+fun App(viewModel: AudioRecorderViewModel? = null) {
     MaterialTheme {
         var showContent by remember { mutableStateOf(false) }
         Column(
@@ -38,6 +58,10 @@ fun App() {
                     Image(painterResource(Res.drawable.compose_multiplatform), null)
                     Text("Compose: $greeting")
                 }
+            }
+            // Add audio recorder controls if viewModel is provided
+            viewModel?.let {
+                AudioRecorderControls(it)
             }
         }
     }
