@@ -7,7 +7,7 @@ import io.github.zharotiai.help_i_cant_sing.permissions.PermissionManager
 import platform.UIKit.UIViewController
 
 fun MainViewController(): UIViewController {
-    val recorder = IosAudioRecorder(outputFile = "recording.m4a")
+    val recorder = IosAudioRecorder()
     val viewModel = AudioRecorderViewModel(recorder)
     val permissionManager = PermissionManager()
 

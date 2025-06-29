@@ -9,8 +9,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.ActivityResultLauncher
 import io.github.zharotiai.help_i_cant_sing.permissions.PermissionManager
-import io.github.zharotiai.help_i_cant_sing.audio.AndroidAudioRecorder
 import io.github.zharotiai.help_i_cant_sing.audio.AudioRecorderViewModel
+import io.github.zharotiai.help_i_cant_sing.audio.AndroidAudioRecorder
 import java.io.File
 
 class MainActivity : ComponentActivity() {
@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
 
         // Prepare output file for recording
         val outputFile = File(cacheDir, "recording.3gp")
-        val recorder = AndroidAudioRecorder(outputFile)
+        val recorder = AndroidAudioRecorder(this)
         val viewModel = AudioRecorderViewModel(recorder)
 
         setContent {
