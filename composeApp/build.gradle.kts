@@ -7,7 +7,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.composeHotReload)
+    // alias(libs.plugins.composeHotReload)
 }
 
 kotlin {
@@ -18,6 +18,10 @@ kotlin {
         }
     }
 
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+
     listOf(
         iosX64(),
         iosArm64(),
@@ -26,11 +30,14 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
+            linkerOpts("-framework", "AVFoundation")
         }
     }
 
 
     sourceSets {
+        val commonMain by getting
+
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
@@ -48,7 +55,6 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
-
     }
 }
 
@@ -81,16 +87,4 @@ android {
 
 dependencies {
     debugImplementation(compose.uiTooling)
-}
-
-compose.desktop {
-    application {
-        mainClass = "io.github.zharotiai.help_i_cant_sing.MainKt"
-
-        nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "io.github.zharotiai.help_i_cant_sing"
-            packageVersion = "1.0.0"
-        }
-    }
 }
