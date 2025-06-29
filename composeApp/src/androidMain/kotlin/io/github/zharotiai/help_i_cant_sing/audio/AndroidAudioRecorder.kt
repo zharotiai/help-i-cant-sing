@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class AndroidAudioRecorder(private val context: android.content.Context) : AudioRecorder {
+    // On Android we require a context object
     private val sampleRate = 44100
     private val bufferSize = AudioRecord.getMinBufferSize(
         sampleRate,

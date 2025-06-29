@@ -2,48 +2,97 @@
 
 package io.github.zharotiai.help_i_cant_sing.audio
 
-import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import platform.AVFAudio.*
-import platform.CoreAudioTypes.kAudioFormatMPEG4AAC
+import platform.AVFoundation.*
 import platform.Foundation.*
+import platform.darwin.NSObject
+import kotlin.native.concurrent.freeze
 
-class IosAudioRecorder(private val outputFile: String) : AudioRecorder {
-    private var recorder: AVAudioRecorder? = null
-    override var isRecording: Boolean = false
+class IosAudioRecorder : AudioRecorder { // doesn't required a context object
+    private val scope = CoroutineScope(Dispatchers.Default)
+    private val _state = MutableStateFlow(RecordingState.Idle)
+    override val state: Flow<RecordingState> = _state.asStateFlow()
+    private val _audioBufferFlow = MutableSharedFlow<ShortArray>(extraBufferCapacity = 8)
+    override val audioBufferFlow: Flow<ShortArray> = _audioBufferFlow.asSharedFlow()
+
+    private var engine: AVAudioEngine? = null
+    private var inputNode: AVAudioInputNode? = null
+    // Removed format property
+    var isRecording: Boolean = false
         private set
-    override var isPaused: Boolean = false
+    var isPaused: Boolean = false
         private set
 
     override fun startRecording() {
-        val settings = mapOf(
-            AVFormatIDKey to kAudioFormatMPEG4AAC,
-            AVSampleRateKey to 44100.0,
-            AVNumberOfChannelsKey to 1,
-            AVEncoderAudioQualityKey to AVAudioQualityHigh
-        )
-        val url = NSURL.fileURLWithPath(outputFile)
-        recorder = AVAudioRecorder(url, settings as Map<Any?, Any?>, null).apply {
-            prepareToRecord()
-            record()
+        if (_state.value == RecordingState.Recording) return
+        // Set and activate AVAudioSession before starting engine
+        val session = AVAudioSession.sharedInstance()
+        memScoped {
+            val errorPtr = alloc<ObjCObjectVar<NSError?>>()
+            session.setCategory(AVAudioSessionCategoryPlayAndRecord, error = errorPtr.ptr)
+            session.setActive(true, error = errorPtr.ptr)
+            // Optionally, check errorPtr.value and log/handle errors
         }
-        isRecording = true
-        isPaused = false
+        engine = AVAudioEngine()
+        inputNode = engine?.inputNode
+        val bufferSize: UInt = 2048u
+        inputNode?.removeTapOnBus(0u) // Remove any previous tap
+        val hwFormat = inputNode?.inputFormatForBus(0u)
+        if (hwFormat != null && inputNode != null) {
+            inputNode!!.installTapOnBus(0u, bufferSize, hwFormat) { buffer, _ ->
+                val audioBuffer = buffer as AVAudioPCMBuffer
+                val channelData = audioBuffer.int16ChannelData
+                val frameLength = audioBuffer.frameLength.toInt()
+                if (channelData != null && frameLength > 0) {
+                    val shortPointer = channelData[0]!!
+                    val shortArray = ShortArray(frameLength) { i -> shortPointer[i] }
+                    scope.launch { _audioBufferFlow.emit(shortArray) }
+                }
+            }
+            val errorPtr = nativeHeap.alloc<ObjCObjectVar<NSError?>>()
+            val started = engine?.startAndReturnError(errorPtr.ptr) ?: false
+            if (!started) {
+                println("AVAudioEngine failed to start: ${'$'}{errorPtr.value?.localizedDescription}")
+                inputNode!!.removeTapOnBus(0u)
+                engine = null
+                inputNode = null
+                _state.value = RecordingState.Idle
+                nativeHeap.free(errorPtr)
+                return
+            }
+            nativeHeap.free(errorPtr)
+            _state.value = RecordingState.Recording
+        }
     }
 
     override fun pauseRecording() {
-        recorder?.pause()
-        isPaused = true
+        if (_state.value != RecordingState.Recording) return
+        engine?.pause()
+        _state.value = RecordingState.Paused
     }
 
     override fun resumeRecording() {
-        recorder?.record()
-        isPaused = false
+        if (_state.value != RecordingState.Paused) return
+        engine?.prepare()
+        engine?.startAndReturnError(null)
+        _state.value = RecordingState.Recording
     }
 
     override fun stopRecording() {
-        recorder?.stop()
-        recorder = null
-        isRecording = false
-        isPaused = false
+        engine?.stop()
+        inputNode?.removeTapOnBus(0u)
+        engine = null
+        inputNode = null
+        _state.value = RecordingState.Idle
     }
 }
