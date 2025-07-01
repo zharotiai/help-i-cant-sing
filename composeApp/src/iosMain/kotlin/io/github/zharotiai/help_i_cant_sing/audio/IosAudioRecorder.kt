@@ -15,6 +15,11 @@ import kotlinx.coroutines.launch
 import platform.AVFAudio.*
 import platform.AVFoundation.*
 import platform.Foundation.*
+import platform.UIKit.UIAlertAction
+import platform.UIKit.UIAlertActionStyleDefault
+import platform.UIKit.UIAlertController
+import platform.UIKit.UIAlertControllerStyleAlert
+import platform.UIKit.UIApplication
 import platform.darwin.NSObject
 import kotlin.native.concurrent.freeze
 
@@ -33,45 +38,90 @@ class IosAudioRecorder : AudioRecorder { // doesn't required a context object
     var isPaused: Boolean = false
         private set
 
-    override fun startRecording() {
-        if (_state.value == RecordingState.Recording) return
-        // Set and activate AVAudioSession before starting engine
+    private fun ensureMicrophonePermission(onGranted: (Boolean) -> Unit) {
         val session = AVAudioSession.sharedInstance()
-        memScoped {
-            val errorPtr = alloc<ObjCObjectVar<NSError?>>()
-            session.setCategory(AVAudioSessionCategoryPlayAndRecord, error = errorPtr.ptr)
-            session.setActive(true, error = errorPtr.ptr)
-            // Optionally, check errorPtr.value and log/handle errors
-        }
-        engine = AVAudioEngine()
-        inputNode = engine?.inputNode
-        val bufferSize: UInt = 2048u
-        inputNode?.removeTapOnBus(0u) // Remove any previous tap
-        val hwFormat = inputNode?.inputFormatForBus(0u)
-        if (hwFormat != null && inputNode != null) {
-            inputNode!!.installTapOnBus(0u, bufferSize, hwFormat) { buffer, _ ->
-                val audioBuffer = buffer as AVAudioPCMBuffer
-                val channelData = audioBuffer.int16ChannelData
-                val frameLength = audioBuffer.frameLength.toInt()
-                if (channelData != null && frameLength > 0) {
-                    val shortPointer = channelData[0]!!
-                    val shortArray = ShortArray(frameLength) { i -> shortPointer[i] }
-                    scope.launch { _audioBufferFlow.emit(shortArray) }
+        when (session.recordPermission) {
+            AVAudioSessionRecordPermissionGranted -> onGranted(true)
+            AVAudioSessionRecordPermissionDenied -> {
+                val alert = UIAlertController.alertControllerWithTitle(
+                    title = "Microphone Permission Required",
+                    message = "Please enable microphone access in Settings > Privacy > Microphone.",
+                    preferredStyle = UIAlertControllerStyleAlert
+                )
+                alert.addAction(
+                    UIAlertAction.actionWithTitle(
+                    title = "OK",
+                    style = UIAlertActionStyleDefault,
+                    handler = null
+                ))
+                val rootVC = UIApplication.sharedApplication.keyWindow?.rootViewController
+                rootVC?.presentViewController(alert, animated = true, completion = null)
+                onGranted(false)
+            }
+            AVAudioSessionRecordPermissionUndetermined -> {
+                session.requestRecordPermission { granted ->
+                    if (!granted) {
+                        val alert = UIAlertController.alertControllerWithTitle(
+                            title = "Microphone Permission Required",
+                            message = "Please enable microphone access in Settings > Privacy > Microphone.",
+                            preferredStyle = UIAlertControllerStyleAlert
+                        )
+                        alert.addAction(UIAlertAction.actionWithTitle(
+                            title = "OK",
+                            style = UIAlertActionStyleDefault,
+                            handler = null
+                        ))
+                        val rootVC = UIApplication.sharedApplication.keyWindow?.rootViewController
+                        rootVC?.presentViewController(alert, animated = true, completion = null)
+                    }
+                    onGranted(granted)
                 }
             }
-            val errorPtr = nativeHeap.alloc<ObjCObjectVar<NSError?>>()
-            val started = engine?.startAndReturnError(errorPtr.ptr) ?: false
-            if (!started) {
-                println("AVAudioEngine failed to start: ${'$'}{errorPtr.value?.localizedDescription}")
-                inputNode!!.removeTapOnBus(0u)
-                engine = null
-                inputNode = null
-                _state.value = RecordingState.Idle
-                nativeHeap.free(errorPtr)
-                return
+            else -> onGranted(false)
+        }
+    }
+
+    override fun startRecording() {
+        ensureMicrophonePermission { granted ->
+            if (!granted) return@ensureMicrophonePermission
+            if (_state.value == RecordingState.Recording) return@ensureMicrophonePermission
+            // Set and activate AVAudioSession before starting engine
+            val session = AVAudioSession.sharedInstance()
+            memScoped {
+                val errorPtr = alloc<ObjCObjectVar<NSError?>>()
+                session.setCategory(AVAudioSessionCategoryPlayAndRecord, error = errorPtr.ptr)
+                session.setActive(true, error = errorPtr.ptr)
             }
-            nativeHeap.free(errorPtr)
-            _state.value = RecordingState.Recording
+            engine = AVAudioEngine()
+            inputNode = engine?.inputNode
+            val bufferSize: UInt = 2048u
+            inputNode?.removeTapOnBus(0u) // Remove any previous tap
+            val hwFormat = inputNode?.inputFormatForBus(0u)
+            if (hwFormat != null && inputNode != null) {
+                inputNode!!.installTapOnBus(0u, bufferSize, hwFormat) { buffer, _ ->
+                    val audioBuffer = buffer as AVAudioPCMBuffer
+                    val channelData = audioBuffer.int16ChannelData
+                    val frameLength = audioBuffer.frameLength.toInt()
+                    if (channelData != null && frameLength > 0) {
+                        val shortPointer = channelData[0]!!
+                        val shortArray = ShortArray(frameLength) { i -> shortPointer[i] }
+                        scope.launch { _audioBufferFlow.emit(shortArray) }
+                    }
+                }
+                val errorPtr = nativeHeap.alloc<ObjCObjectVar<NSError?>>()
+                val started = engine?.startAndReturnError(errorPtr.ptr) ?: false
+                if (!started) {
+                    println("AVAudioEngine failed to start: ${'$'}{errorPtr.value?.localizedDescription}")
+                    inputNode!!.removeTapOnBus(0u)
+                    engine = null
+                    inputNode = null
+                    _state.value = RecordingState.Idle
+                    nativeHeap.free(errorPtr)
+                    return@ensureMicrophonePermission
+                }
+                nativeHeap.free(errorPtr)
+                _state.value = RecordingState.Recording
+            }
         }
     }
 
@@ -82,10 +132,13 @@ class IosAudioRecorder : AudioRecorder { // doesn't required a context object
     }
 
     override fun resumeRecording() {
-        if (_state.value != RecordingState.Paused) return
-        engine?.prepare()
-        engine?.startAndReturnError(null)
-        _state.value = RecordingState.Recording
+        ensureMicrophonePermission { granted ->
+            if (!granted) return@ensureMicrophonePermission
+            if (_state.value != RecordingState.Paused) return@ensureMicrophonePermission
+            engine?.prepare()
+            engine?.startAndReturnError(null)
+            _state.value = RecordingState.Recording
+        }
     }
 
     override fun stopRecording() {
