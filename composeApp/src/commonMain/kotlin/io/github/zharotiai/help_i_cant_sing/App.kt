@@ -17,7 +17,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 import help_i_cant_sing.composeapp.generated.resources.Res
 import help_i_cant_sing.composeapp.generated.resources.compose_multiplatform
-import io.github.zharotiai.help_i_cant_sing.audio.AudioRecorderViewModel
+import io.github.zharotiai.help_i_cant_sing.audio.record.AudioRecorderViewModel
 import androidx.compose.runtime.collectAsState
 import io.github.zharotiai.help_i_cant_sing.permissions.PermissionManager
 
@@ -37,6 +37,17 @@ fun AudioRecorderControls(viewModel: AudioRecorderViewModel) {
             Button(onClick = { viewModel.stop() }) { Text("Stop") }
         }
     }
+}
+
+@Composable
+fun PitchDisplay(viewModel: AudioRecorderViewModel) {
+    val pitch by viewModel.pitch.collectAsState()
+    val roundedPitch = pitch?.let { (it * 100).toInt() / 100.0 }?.toString() ?: "--"
+    val text = "Current pitch: $roundedPitch Hz"
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyLarge
+        )
 }
 
 @Composable
@@ -64,8 +75,9 @@ fun App(viewModel: AudioRecorderViewModel? = null, permissionManager: Permission
                     Text("Compose: $greeting")
                 }
             }
-            // Add audio recorder controls if viewModel is provided
+            // Add audio recorder controls and pitch display if viewModel is provided
             viewModel?.let {
+                PitchDisplay(it)
                 AudioRecorderControls(it)
             }
         }

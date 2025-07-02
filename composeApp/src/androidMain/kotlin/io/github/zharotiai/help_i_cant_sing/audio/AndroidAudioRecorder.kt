@@ -6,6 +6,8 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import androidx.core.app.ActivityCompat
+import io.github.zharotiai.help_i_cant_sing.audio.record.AudioRecorder
+import io.github.zharotiai.help_i_cant_sing.audio.record.RecordingState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*

@@ -2,26 +2,24 @@
 
 package io.github.zharotiai.help_i_cant_sing.audio
 
+import io.github.zharotiai.help_i_cant_sing.audio.record.AudioRecorder
+import io.github.zharotiai.help_i_cant_sing.audio.record.RecordingState
 import kotlinx.cinterop.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import platform.AVFAudio.*
-import platform.AVFoundation.*
 import platform.Foundation.*
 import platform.UIKit.UIAlertAction
 import platform.UIKit.UIAlertActionStyleDefault
 import platform.UIKit.UIAlertController
 import platform.UIKit.UIAlertControllerStyleAlert
 import platform.UIKit.UIApplication
-import platform.darwin.NSObject
-import kotlin.native.concurrent.freeze
 
 class IosAudioRecorder : AudioRecorder { // doesn't required a context object
     private val scope = CoroutineScope(Dispatchers.Default)
@@ -90,6 +88,8 @@ class IosAudioRecorder : AudioRecorder { // doesn't required a context object
             memScoped {
                 val errorPtr = alloc<ObjCObjectVar<NSError?>>()
                 session.setCategory(AVAudioSessionCategoryPlayAndRecord, error = errorPtr.ptr)
+                session.setPreferredSampleRate(44100.0, error = errorPtr.ptr)
+                session.setPreferredInputNumberOfChannels(1, error = errorPtr.ptr)
                 session.setActive(true, error = errorPtr.ptr)
             }
             engine = AVAudioEngine()
@@ -97,15 +97,36 @@ class IosAudioRecorder : AudioRecorder { // doesn't required a context object
             val bufferSize: UInt = 2048u
             inputNode?.removeTapOnBus(0u) // Remove any previous tap
             val hwFormat = inputNode?.inputFormatForBus(0u)
-            if (hwFormat != null && inputNode != null) {
-                inputNode!!.installTapOnBus(0u, bufferSize, hwFormat) { buffer, _ ->
+            // Force mono, 16-bit, 44100Hz format
+            val desiredFormat = AVAudioFormat(
+                commonFormat = AVAudioPCMFormatInt16,
+                sampleRate = 44100.0,
+                channels = 1u,
+                interleaved = true
+            )
+            if (hwFormat != null && inputNode != null && desiredFormat != null) {
+                inputNode!!.installTapOnBus(0u, bufferSize, desiredFormat) { buffer, _ ->
                     val audioBuffer = buffer as AVAudioPCMBuffer
-                    val channelData = audioBuffer.int16ChannelData
+                    val channelCount = audioBuffer.format.channelCount.toInt()
                     val frameLength = audioBuffer.frameLength.toInt()
+                    val channelData = audioBuffer.int16ChannelData
                     if (channelData != null && frameLength > 0) {
-                        val shortPointer = channelData[0]!!
-                        val shortArray = ShortArray(frameLength) { i -> shortPointer[i] }
+                        // If stereo, convert to mono by averaging channels
+                        val shortArray = if (channelCount == 1) {
+                            ShortArray(frameLength) { i -> channelData[0]!![i] }
+                        } else {
+                            ShortArray(frameLength) { i ->
+                                var sum = 0
+                                for (c in 0 until channelCount) {
+                                    sum += channelData[c]!![i].toInt()
+                                }
+                                (sum / channelCount).toShort()
+                            }
+                        }
+                        println("[IosAudioRecorder] Emitting buffer, size: ${'$'}frameLength, channels: ${'$'}channelCount")
                         scope.launch { _audioBufferFlow.emit(shortArray) }
+                    } else {
+                        println("[IosAudioRecorder] Empty or null buffer emitted!")
                     }
                 }
                 val errorPtr = nativeHeap.alloc<ObjCObjectVar<NSError?>>()
