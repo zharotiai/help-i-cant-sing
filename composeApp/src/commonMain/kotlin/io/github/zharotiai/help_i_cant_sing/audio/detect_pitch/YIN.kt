@@ -6,7 +6,7 @@ import kotlin.math.min
 class YIN : PitchDetector {
     private val _name = "YIN"
 
-    private val threshold: Float = 0.15f
+    private val threshold: Float = 0.3f
     private val minFrequency = 80 // Roughly the human vocal range
     private val maxFrequency = 1000
 
