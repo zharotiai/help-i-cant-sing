@@ -1,4 +1,4 @@
-package io.github.zharotiai.help_i_cant_sing.audio
+package io.github.zharotiai.help_i_cant_sing.audio.record
 
 import kotlinx.coroutines.flow.Flow
 
