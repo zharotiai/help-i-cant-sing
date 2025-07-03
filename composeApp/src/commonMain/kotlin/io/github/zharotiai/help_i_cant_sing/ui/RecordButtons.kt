@@ -22,7 +22,10 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import io.github.zharotiai.help_i_cant_sing.ui.theme.AppTheme
 
+
+private const val RECORD_COLOUR = 0xFFCC4C4C
 
 @Composable
 fun RecordButton(
@@ -33,81 +36,104 @@ fun RecordButton(
     isPaused: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val scale by animateFloatAsState(if (isRecording) 0.85f else 1f)
     val colorScheme = MaterialTheme.colorScheme
 
-    // Animate the buttons sliding in/out
-    AnimatedVisibility(
-        visible = isRecording,
-        enter = slideInHorizontally() + fadeIn(),
-        exit = slideOutHorizontally() + fadeOut(),
-        modifier = modifier
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // Pause/Play Button
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .scale(scale)
-                    .clip(CircleShape)
-                    .border(2.dp, colorScheme.onSurface, CircleShape)
-                    .background(if (isPaused) colorScheme.surface else colorScheme.primary)
-                    .clickable(onClick = onPause),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
-                    contentDescription = if (isPaused) "Resume" else "Pause",
-                    tint = if (isPaused) colorScheme.primary else colorScheme.onPrimary,
-                    modifier = Modifier.size(32.dp)
-                )
-            }
+    // Animation values for splitting effect
+    val buttonsOffset by animateFloatAsState(
+        targetValue = if (isRecording) 32f else 0f,
+        animationSpec = spring(
+            dampingRatio = 0.7f,
+            stiffness = Spring.StiffnessLow
+        )
+    )
 
-            // Stop Button
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .scale(scale)
-                    .clip(CircleShape)
-                    .border(2.dp, colorScheme.onSurface, CircleShape)
-                    .background(colorScheme.tertiary)
-                    .clickable(onClick = onStop),
-                contentAlignment = Alignment.Center
+    val buttonScale by animateFloatAsState(
+        targetValue = if (isRecording) 0.85f else 1f,
+        animationSpec = spring(
+            dampingRatio = 0.7f,
+            stiffness = Spring.StiffnessLow
+        )
+    )
+
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        // Control buttons (Pause/Play and Stop)
+        AnimatedVisibility(
+            visible = isRecording,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.offset(x = 0.dp, y = 0.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Stop,
-                    contentDescription = "Stop Recording",
-                    tint = colorScheme.onTertiary,
-                    modifier = Modifier.size(32.dp)
-                )
+                // Pause/Play Button
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .offset(x = (-buttonsOffset).dp)
+                        .scale(buttonScale)
+                        .clip(CircleShape)
+                        .border(2.dp, colorScheme.onSurface, CircleShape)
+                        .background(if (isPaused) colorScheme.surface else colorScheme.primary)
+                        .clickable(onClick = onPause),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
+                        contentDescription = if (isPaused) "Resume" else "Pause",
+                        tint = if (isPaused) colorScheme.primary else colorScheme.onPrimary,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+
+                // Stop Button
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .offset(x = buttonsOffset.dp)
+                        .scale(buttonScale)
+                        .clip(CircleShape)
+                        .border(2.dp, colorScheme.onSurface, CircleShape)
+                        .background(colorScheme.tertiary)
+                        .clickable(onClick = onStop),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Stop,
+                        contentDescription = "Stop Recording",
+                        tint = colorScheme.onTertiary,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
         }
-    }
 
-    // Main record button
-    AnimatedVisibility(
-        visible = !isRecording,
-        enter = fadeIn(),
-        exit = fadeOut(),
-        modifier = modifier
-    ) {
-        Box(
-            modifier = Modifier
-                .size(64.dp)
-                .clip(CircleShape)
-                .border(2.dp, colorScheme.onSurface, CircleShape)
-                .clickable(onClick = onRecord),
-            contentAlignment = Alignment.Center
+        // Main record button
+        AnimatedVisibility(
+            visible = !isRecording,
+            enter = fadeIn(),
+            exit = fadeOut(),
         ) {
-            Icon(
-                imageVector = Icons.Default.FiberManualRecord,
-                contentDescription = "Start Recording",
-                tint = colorScheme.error,    // use error color for record icon (red)
-                modifier = Modifier.size(40.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .border(2.dp, colorScheme.onSurface, CircleShape)
+                    .background(colorScheme.surface)
+                    .clickable(onClick = onRecord),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.FiberManualRecord,
+                    contentDescription = "Start Recording",
+                    tint = Color(RECORD_COLOUR),
+                    modifier = Modifier.size(40.dp)
+                )
+            }
         }
     }
 }
@@ -118,7 +144,7 @@ private fun RecordButtonPreview() {
     var isRecording by remember { mutableStateOf(false) }
     var isPaused by remember { mutableStateOf(false) }
 
-    MaterialTheme {
+    AppTheme {  // Using our custom AppTheme instead of MaterialTheme
         Box(
             modifier = Modifier
                 .fillMaxWidth()
