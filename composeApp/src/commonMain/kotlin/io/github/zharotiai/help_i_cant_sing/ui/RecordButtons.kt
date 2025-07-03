@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
+
 @Composable
 fun RecordButton(
     onRecord: () -> Unit,
@@ -33,6 +34,7 @@ fun RecordButton(
     modifier: Modifier = Modifier
 ) {
     val scale by animateFloatAsState(if (isRecording) 0.85f else 1f)
+    val colorScheme = MaterialTheme.colorScheme
 
     // Animate the buttons sliding in/out
     AnimatedVisibility(
@@ -51,15 +53,15 @@ fun RecordButton(
                     .size(56.dp)
                     .scale(scale)
                     .clip(CircleShape)
-                    .border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
-                    .background(if (isPaused) Color.White else Color(0xFFFF9800))
+                    .border(2.dp, colorScheme.onSurface, CircleShape)
+                    .background(if (isPaused) colorScheme.surface else colorScheme.primary)
                     .clickable(onClick = onPause),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
                     contentDescription = if (isPaused) "Resume" else "Pause",
-                    tint = if (isPaused) Color(0xFFFF9800) else Color.White,
+                    tint = if (isPaused) colorScheme.primary else colorScheme.onPrimary,
                     modifier = Modifier.size(32.dp)
                 )
             }
@@ -70,15 +72,15 @@ fun RecordButton(
                     .size(56.dp)
                     .scale(scale)
                     .clip(CircleShape)
-                    .border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
-                    .background(Color.Red)
+                    .border(2.dp, colorScheme.onSurface, CircleShape)
+                    .background(colorScheme.tertiary)
                     .clickable(onClick = onStop),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Stop,
                     contentDescription = "Stop Recording",
-                    tint = Color.White,
+                    tint = colorScheme.onTertiary,
                     modifier = Modifier.size(32.dp)
                 )
             }
@@ -96,15 +98,14 @@ fun RecordButton(
             modifier = Modifier
                 .size(64.dp)
                 .clip(CircleShape)
-                .border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
-                .background(Color.White)
+                .border(2.dp, colorScheme.onSurface, CircleShape)
                 .clickable(onClick = onRecord),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.FiberManualRecord,
                 contentDescription = "Start Recording",
-                tint = Color.Red,
+                tint = colorScheme.error,    // use error color for record icon (red)
                 modifier = Modifier.size(40.dp)
             )
         }
@@ -117,22 +118,26 @@ private fun RecordButtonPreview() {
     var isRecording by remember { mutableStateOf(false) }
     var isPaused by remember { mutableStateOf(false) }
 
-    Box(
-        modifier = Modifier.padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        RecordButton(
-            onRecord = {
-                isRecording = true
-                isPaused = false
-            },
-            onPause = { isPaused = !isPaused },
-            onStop = {
-                isRecording = false
-                isPaused = false
-            },
-            isRecording = isRecording,
-            isPaused = isPaused
-        )
+    MaterialTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            RecordButton(
+                onRecord = {
+                    isRecording = true
+                    isPaused = false
+                },
+                onPause = { isPaused = !isPaused },
+                onStop = {
+                    isRecording = false
+                    isPaused = false
+                },
+                isRecording = isRecording,
+                isPaused = isPaused
+            )
+        }
     }
 }

@@ -339,11 +339,6 @@ private fun RollingPitchGraph(
     }
 }
 
-private fun log2(value: Float): Float = ln(value) / ln(2f)
-
-fun freqToMidi(freq: Float): Int {
-    return (69 + 12 * log2(freq / 440f)).roundToInt()
-}
 
 fun midiToNoteName(midi: Int): String {
     val notes = listOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
