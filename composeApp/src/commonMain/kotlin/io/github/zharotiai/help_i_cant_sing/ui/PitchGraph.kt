@@ -67,7 +67,9 @@ fun PitchGraph(
     ) {
         Canvas(
             // The Canvas is now the full height of all octaves and fills the width
-            modifier = Modifier.fillMaxWidth().height(totalCanvasHeight)
+            modifier = Modifier.fillMaxWidth()
+                                .height(totalCanvasHeight)
+                .background(backgroundColor)
         ) {
             val width = size.width
             val height = size.height // This is now the total canvas height in pixels

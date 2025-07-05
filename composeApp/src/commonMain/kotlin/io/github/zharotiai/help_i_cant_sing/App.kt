@@ -21,6 +21,8 @@ import io.github.zharotiai.help_i_cant_sing.audio.record.AudioRecorderViewModel
 import androidx.compose.runtime.collectAsState
 import io.github.zharotiai.help_i_cant_sing.permissions.PermissionManager
 import io.github.zharotiai.help_i_cant_sing.ui.LivePitchScreen
+import io.github.zharotiai.help_i_cant_sing.ui.MyPitchScreen
+import io.github.zharotiai.help_i_cant_sing.ui.theme.AppTheme
 
 
 @Composable
@@ -32,7 +34,9 @@ fun App(viewModel: AudioRecorderViewModel? = null, permissionManager: Permission
             permissionManager?.requestAudioPermission {}
         }
         viewModel?.let {
-            LivePitchScreen(it)
+            AppTheme {
+                MyPitchScreen(it)
+            }
         } ?: Text("No ViewModel provided.")
     }
 }

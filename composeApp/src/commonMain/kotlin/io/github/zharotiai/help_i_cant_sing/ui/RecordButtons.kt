@@ -85,7 +85,7 @@ fun RecordButton(
                     Icon(
                         imageVector = if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
                         contentDescription = if (isPaused) "Resume" else "Pause",
-                        tint = if (isPaused) colorScheme.primary else colorScheme.onPrimary,
+                        tint = if (isPaused) colorScheme.primary else colorScheme.surface,
                         modifier = Modifier.size(32.dp)
                     )
                 }
@@ -105,7 +105,7 @@ fun RecordButton(
                     Icon(
                         imageVector = Icons.Default.Stop,
                         contentDescription = "Stop Recording",
-                        tint = colorScheme.onTertiary,
+                        tint = colorScheme.surface,
                         modifier = Modifier.size(32.dp)
                     )
                 }
