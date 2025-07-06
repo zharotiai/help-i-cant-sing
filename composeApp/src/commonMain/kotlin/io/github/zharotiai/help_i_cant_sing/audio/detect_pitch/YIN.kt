@@ -6,7 +6,7 @@ import kotlin.math.min
 class YIN : PitchDetector {
     private val _name = "YIN"
 
-    private val threshold: Float = 0.3f
+    private val threshold: Float = 0.25f
     private val minFrequency = 80 // Roughly the human vocal range
     private val maxFrequency = 1000
 
@@ -20,7 +20,9 @@ class YIN : PitchDetector {
 
         // the buffer size needs to be large enough so that we can safely perform autocorrelation
         // we need at least two more samples greater than maxTau
-        if (bufferSize < maxTau + 2) return null
+        if (bufferSize < maxTau + 2) {
+            return null
+        }
 
 
         // placeholder array
@@ -60,7 +62,10 @@ class YIN : PitchDetector {
             }
         }
 
-        if (tauEstimate == -1) return null // if not found, return null
+        if (tauEstimate == -1) {
+            println("YIN DEBUG: No local minimum below threshold found")
+            return null
+        } // if not found, return null
 
         //4. Parabolic interpretation, an improvement
         val betterTau = parabolicInterpretation(yinBuffer, tauEstimate)

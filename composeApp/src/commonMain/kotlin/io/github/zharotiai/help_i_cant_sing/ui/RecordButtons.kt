@@ -56,8 +56,10 @@ fun RecordButton(
     )
 
     Box(
-        modifier = modifier,
+        modifier = modifier
+            .padding(horizontal = 64.dp), // enough for offset + button size,
         contentAlignment = Alignment.Center
+
     ) {
         // Control buttons (Pause/Play and Stop)
         AnimatedVisibility(
@@ -148,7 +150,7 @@ private fun RecordButtonPreview() {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(32.dp),
+                .padding(64.dp),
             contentAlignment = Alignment.Center
         ) {
             RecordButton(

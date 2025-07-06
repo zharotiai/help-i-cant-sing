@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Divider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,12 +16,13 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.BlendMode.Companion.Color
 import androidx.compose.ui.unit.dp
 import io.github.zharotiai.help_i_cant_sing.audio.record.AudioRecorderViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
-fun MyPitchScreen(viewModel: AudioRecorderViewModel? = null) { // 1. Make ViewModel nullable
+fun MyPitchScreen(viewModel: AudioRecorderViewModel? = null) {
     // 2. Handle the null case for Previews.
     //    If the viewModel is null, we're in a preview, so show a placeholder and exit.
     if (viewModel == null) {
@@ -60,6 +63,12 @@ fun MyPitchScreen(viewModel: AudioRecorderViewModel? = null) { // 1. Make ViewMo
                 .weight(1f)
         )
 
+        Divider(
+            color = MaterialTheme.colorScheme.onSurface,
+            thickness = 4.dp,         // Make it bolder/thicker
+            modifier = Modifier.fillMaxWidth()
+        )
+
         // 3. Simplified pause/resume logic for better clarity.
         RecordButton(
             onRecord = { viewModel.start() },
@@ -67,7 +76,7 @@ fun MyPitchScreen(viewModel: AudioRecorderViewModel? = null) { // 1. Make ViewMo
             onStop = { viewModel.stop() },
             isRecording = isRecording,
             isPaused = isPaused,
-            modifier = Modifier.padding(32.dp)
+            modifier = Modifier.padding(horizontal = 64.dp, vertical = 16.dp)
         )
     }
 }

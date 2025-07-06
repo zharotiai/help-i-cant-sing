@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,19 +25,24 @@ import io.github.zharotiai.help_i_cant_sing.ui.LivePitchScreen
 import io.github.zharotiai.help_i_cant_sing.ui.MyPitchScreen
 import io.github.zharotiai.help_i_cant_sing.ui.theme.AppTheme
 
-
 @Composable
-@Preview
-fun App(viewModel: AudioRecorderViewModel? = null, permissionManager: PermissionManager? = null) {
-    MaterialTheme {
-        // Request audio permission on activation (only if permissionManager is provided)
-        LaunchedEffect(permissionManager) {
-            permissionManager?.requestAudioPermission {}
-        }
-        viewModel?.let {
-            AppTheme {
-                MyPitchScreen(it)
+fun App(viewModel: AudioRecorderViewModel?, permissionManager: PermissionManager?) {
+    AppTheme {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            if (permissionManager != null) {
+                LaunchedEffect(Unit) {
+                    permissionManager.requestAudioPermission {}
+                }
             }
-        } ?: Text("No ViewModel provided.")
+
+            if (viewModel != null) {
+                MyPitchScreen(viewModel)
+            } else {
+                Text("No ViewModel provided.")
+            }
+        }
     }
 }

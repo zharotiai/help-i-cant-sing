@@ -2,6 +2,7 @@ package io.github.zharotiai.help_i_cant_sing.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -17,6 +18,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import io.github.zharotiai.help_i_cant_sing.ui.theme.AppTheme
+import kotlinx.coroutines.launch
 import kotlin.math.*
 
 // A map of musical notes to their fundamental frequencies in Hertz.
@@ -49,43 +51,55 @@ fun PitchGraph(
     val lineColor = MaterialTheme.colorScheme.primary
     val backgroundColor = MaterialTheme.colorScheme.surface
 
-    // --- NEW: Define the vertical scale of the graph ---
-    // This determines how "zoomed in" the y-axis is.
-    // 320.dp means one octave will take up 320dp of vertical space.
     val dpPerOctave = 320.dp
+    // --- NEW: Define the horizontal spacing for each data point ---
+    val dpPerHistoryPoint = 4.dp
 
     val minFreq = notes.values.minOrNull() ?: 27.50f // A0
     val maxFreq = notes.values.maxOrNull() ?: 4186.01f // C8
 
-    // --- NEW: Calculate the total height of the scrollable canvas ---
     val numOctaves = log2(maxFreq / minFreq)
     val totalCanvasHeight = (dpPerOctave.value * numOctaves).dp
+    // --- NEW: Calculate the total width based on the history size ---
+    val totalCanvasWidth = (dpPerHistoryPoint.value * pitchHistory.size).dp
 
-    // --- NEW: The graph is now wrapped in a scrollable Box ---
+    // --- NEW: Create scroll states for both vertical and horizontal scrolling ---
+    val verticalScrollState = rememberScrollState()
+    val horizontalScrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
+
+    // --- NEW: Automatically scroll to the end when new pitch data arrives ---
+    LaunchedEffect(pitchHistory.size) {
+        coroutineScope.launch {
+            horizontalScrollState.scrollTo(horizontalScrollState.maxValue)
+        }
+    }
+
+    // --- NEW: The graph is now wrapped in a Box with both scroll modifiers ---
     Box(
-        modifier = modifier.verticalScroll(rememberScrollState())
+        modifier = modifier
+            .verticalScroll(verticalScrollState)
+            .horizontalScroll(horizontalScrollState)
     ) {
         Canvas(
-            // The Canvas is now the full height of all octaves and fills the width
-            modifier = Modifier.fillMaxWidth()
-                                .height(totalCanvasHeight)
+            // The Canvas is now sized based on the full history, not the screen
+            modifier = Modifier
+                .width(totalCanvasWidth)
+                .height(totalCanvasHeight)
                 .background(backgroundColor)
         ) {
-            val width = size.width
-            val height = size.height // This is now the total canvas height in pixels
+            val width = size.width // This is now the total canvas width in pixels
+            val height = size.height
             val pixelsPerOctave = dpPerOctave.toPx()
             val logMin = log2(minFreq)
 
-            // --- NEW: Updated function to convert frequency to a y-coordinate on our tall canvas ---
             fun freqToY(freq: Float): Float {
-                // Coerce at least a small value to prevent log2(0) which is -Infinity
                 val logFreq = log2(freq.coerceAtLeast(0.1f))
                 val octavesFromMin = logFreq - logMin
-                // Calculate Y position from the top of the canvas
                 return height - (octavesFromMin * pixelsPerOctave)
             }
 
-            // Draw grid lines for all notes
+            // Draw grid lines for all notes across the new, wider canvas
             notes.forEach { (noteName, freq) ->
                 val y = freqToY(freq)
                 val isCNote = noteName.length >= 2 && noteName[0] == 'C' && noteName[1].isDigit()
@@ -101,8 +115,8 @@ fun PitchGraph(
             // Draw the pitch history
             if (pitchHistory.isNotEmpty()) {
                 val path = Path()
-                val historySize = pitchHistory.size
-                val stepX = width / (historySize - 1).coerceAtLeast(1)
+                // --- NEW: The step on the X-axis is now a fixed value ---
+                val stepX = dpPerHistoryPoint.toPx()
 
                 var lastValidFreq: Float? = null
                 pitchHistory.forEachIndexed { index, freq ->
@@ -116,7 +130,7 @@ fun PitchGraph(
                         }
                         lastValidFreq = freq
                     } else {
-                        lastValidFreq = null // Lift the pen for null gaps
+                        lastValidFreq = null
                     }
                 }
 
@@ -138,22 +152,17 @@ fun PitchGraph(
 
                 val color = if (abs(centsOff) <= toleranceCents) Color.Green else Color.Red
 
+                // --- NEW: The indicator is now drawn at the end of the history line ---
+                val currentX = (pitchHistory.size - 1).coerceAtLeast(0) * dpPerHistoryPoint.toPx()
+
                 drawCircle(
                     color = color,
                     radius = 5.dp.toPx(),
-                    center = Offset(width - 1.dp.toPx(), y) // Draw slightly inside the edge
+                    center = Offset(currentX, y)
                 )
             }
-
-
-
-            // Draw a static vertical line at the right edge
-            drawLine(
-                color = lineColor,
-                start = Offset(width, 0f),
-                end = Offset(width, height),
-                strokeWidth = 2.dp.toPx()
-            )
+            // The static vertical line at the edge is no longer needed,
+            // as the current pitch circle serves as the "now" indicator.
         }
     }
 }
@@ -169,7 +178,7 @@ fun PreviewPitchGraph() {
     }
 
     AppTheme {
-        // --- NEW: The PitchGraph is now self-contained and scrollable. ---
+        // The PitchGraph is now self-contained and scrollable.
         // We just need to give it a size to occupy in the layout.
         PitchGraph(
             pitch = samplePitch,
