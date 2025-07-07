@@ -11,3 +11,9 @@ fun freqToMidi(freq: Float): Int {
 fun midiToFreq(midi: Int): Double = 440.0 * 2.0.pow((midi - 69) / 12.0)
 
 fun log2(value: Float): Float = ln(value) / ln(2f)
+
+fun freqToY(freq: Float, logMin: Float, height: Float, pixelsPerOctave: Float): Float {
+    val logFreq = log2(freq.coerceAtLeast(0.1f))
+    val octavesFromMin = logFreq - logMin
+    return height - (octavesFromMin * pixelsPerOctave)
+}

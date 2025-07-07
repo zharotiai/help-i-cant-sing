@@ -14,11 +14,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import org.jetbrains.compose.ui.tooling.preview.Preview
 import io.github.zharotiai.help_i_cant_sing.ui.theme.AppTheme
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.*
 
 // A map of musical notes to their fundamental frequencies in Hertz.
@@ -52,7 +53,6 @@ fun PitchGraph(
     val backgroundColor = MaterialTheme.colorScheme.surface
 
     val dpPerOctave = 320.dp
-    // --- NEW: Define the horizontal spacing for each data point ---
     val dpPerHistoryPoint = 4.dp
 
     val minFreq = notes.values.minOrNull() ?: 27.50f // A0
@@ -60,22 +60,54 @@ fun PitchGraph(
 
     val numOctaves = log2(maxFreq / minFreq)
     val totalCanvasHeight = (dpPerOctave.value * numOctaves).dp
-    // --- NEW: Calculate the total width based on the history size ---
     val totalCanvasWidth = (dpPerHistoryPoint.value * pitchHistory.size).dp
 
-    // --- NEW: Create scroll states for both vertical and horizontal scrolling ---
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
+    val density = LocalDensity.current
 
-    // --- NEW: Automatically scroll to the end when new pitch data arrives ---
+    // --- REFACTOR: Centralize the frequency-to-Y conversion logic for reuse ---
+    // --- REFACTOR: Centralize the frequency-to-Y conversion logic for reuse ---
+    val freqToY: (Float) -> Float = remember(totalCanvasHeight, dpPerOctave, minFreq, density) {
+        val canvasHeightPx = with(density) { totalCanvasHeight.toPx() }
+        val pixelsPerOctave = with(density) { dpPerOctave.toPx() }
+        val logMin = log2(minFreq)
+
+        // FIX: Use a labeled return to explicitly return the function.
+        // This resolves the compiler's type inference issue.
+        return@remember { freq ->
+            val logFreq = log2(freq.coerceAtLeast(0.1f))
+            val octavesFromMin = logFreq - logMin
+            canvasHeightPx - (octavesFromMin * pixelsPerOctave)
+        }
+    }
+
+    // Automatically scroll horizontally to the end when new pitch data arrives
     LaunchedEffect(pitchHistory.size) {
         coroutineScope.launch {
             horizontalScrollState.scrollTo(horizontalScrollState.maxValue)
         }
     }
 
-    // --- NEW: The graph is now wrapped in a Box with both scroll modifiers ---
+    // --- NEW: Automatically scroll vertically to keep the current pitch centered ---
+    LaunchedEffect(pitch) {
+        if (pitch != null) {
+            val pitchY = freqToY(pitch)
+            val viewportHeight = verticalScrollState.viewportSize
+
+            // Only scroll if the viewport has been measured
+            if (viewportHeight > 0) {
+                // Calculate the target scroll position to center the pitch
+                val targetScrollY = pitchY - (viewportHeight / 2f)
+                coroutineScope.launch {
+                    // Use animateScrollTo for a smooth, non-jarring transition
+                    verticalScrollState.animateScrollTo(targetScrollY.roundToInt())
+                }
+            }
+        }
+    }
+
     Box(
         modifier = modifier
             .verticalScroll(verticalScrollState)
@@ -90,14 +122,6 @@ fun PitchGraph(
         ) {
             val width = size.width // This is now the total canvas width in pixels
             val height = size.height
-            val pixelsPerOctave = dpPerOctave.toPx()
-            val logMin = log2(minFreq)
-
-            fun freqToY(freq: Float): Float {
-                val logFreq = log2(freq.coerceAtLeast(0.1f))
-                val octavesFromMin = logFreq - logMin
-                return height - (octavesFromMin * pixelsPerOctave)
-            }
 
             // Draw grid lines for all notes across the new, wider canvas
             notes.forEach { (noteName, freq) ->
@@ -115,7 +139,6 @@ fun PitchGraph(
             // Draw the pitch history
             if (pitchHistory.isNotEmpty()) {
                 val path = Path()
-                // --- NEW: The step on the X-axis is now a fixed value ---
                 val stepX = dpPerHistoryPoint.toPx()
 
                 var lastValidFreq: Float? = null
@@ -152,7 +175,6 @@ fun PitchGraph(
 
                 val color = if (abs(centsOff) <= toleranceCents) Color.Green else Color.Red
 
-                // --- NEW: The indicator is now drawn at the end of the history line ---
                 val currentX = (pitchHistory.size - 1).coerceAtLeast(0) * dpPerHistoryPoint.toPx()
 
                 drawCircle(
@@ -161,8 +183,6 @@ fun PitchGraph(
                     center = Offset(currentX, y)
                 )
             }
-            // The static vertical line at the edge is no longer needed,
-            // as the current pitch circle serves as the "now" indicator.
         }
     }
 }
