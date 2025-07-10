@@ -21,7 +21,6 @@ import help_i_cant_sing.composeapp.generated.resources.compose_multiplatform
 import io.github.zharotiai.help_i_cant_sing.audio.record.AudioRecorderViewModel
 import androidx.compose.runtime.collectAsState
 import io.github.zharotiai.help_i_cant_sing.permissions.PermissionManager
-import io.github.zharotiai.help_i_cant_sing.ui.LivePitchScreen
 import io.github.zharotiai.help_i_cant_sing.ui.MyPitchScreen
 import io.github.zharotiai.help_i_cant_sing.ui.theme.AppTheme
 
