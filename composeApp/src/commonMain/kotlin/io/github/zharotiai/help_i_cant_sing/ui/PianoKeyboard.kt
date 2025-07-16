@@ -50,7 +50,7 @@ fun PianoKeyboard(
             val semitoneHeight = pixelsPerOctave / 12f
             val allMidiNotes = (21..108)
 
-            // --- 1. Draw all White Keys with Borders ---
+            // White keys with borders
             allMidiNotes.forEach { midi ->
                 val noteName = midiToNoteName(midi)
                 if (!noteName.contains("#")) {
@@ -58,13 +58,13 @@ fun PianoKeyboard(
                     val y = freqToY(freq)
                     val keyTopY = y - (semitoneHeight / 2f)
 
-                    // Draw the key fill
+                    // key fill
                     drawRect(
                         color = if (midi == currentMidiNote) highlightColor else whiteKeyColor,
                         topLeft = Offset(0f, keyTopY),
                         size = Size(canvasWidth, semitoneHeight)
                     )
-                    // Draw a border for definition
+                    // border for definition
                     drawRect(
                         color = keyBorderColor,
                         topLeft = Offset(0f, keyTopY),
@@ -74,7 +74,7 @@ fun PianoKeyboard(
                 }
             }
 
-            // --- 2. Draw all Black Keys on top ---
+            // draw all black keys on top
             allMidiNotes.forEach { midi ->
                 val noteName = midiToNoteName(midi)
                 if (noteName.contains("#")) {
@@ -90,12 +90,11 @@ fun PianoKeyboard(
                 }
             }
 
-            // --- 3. Draw Note Labels on White Keys Only ---
+            // draw note labels on white keys only
             allMidiNotes.forEach { midi ->
                 val fullNoteName = midiToNoteName(midi)
                 val isBlackKey = fullNoteName.contains("#")
 
-                // This is the change: only proceed to draw text if it's NOT a black key.
                 if (!isBlackKey) {
                     val displayName = fullNoteName.filter { !it.isDigit() }
                     val y = freqToY(midiToFreq(midi))

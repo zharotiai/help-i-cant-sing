@@ -55,7 +55,6 @@ fun MyPitchScreen(viewModel: AudioRecorderViewModel? = null) {
         }
     }
 
-    // --- HOISTED STATE & LAYOUT PARAMETERS ---
     val verticalScrollState = rememberScrollState()
     val dpPerOctave = 320.dp
 
@@ -93,13 +92,11 @@ fun MyPitchScreen(viewModel: AudioRecorderViewModel? = null) {
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // The main content area is now a Row to place items side-by-side.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
         ) {
-            // Pitch Graph takes up most of the space.
             PitchGraph(
                 pitch = smoothedPitch,
                 pitchHistory = pitchHistory,
@@ -110,7 +107,6 @@ fun MyPitchScreen(viewModel: AudioRecorderViewModel? = null) {
                 freqToY = freqToY
             )
 
-            // Piano Keyboard takes up a fixed width on the right.
             PianoKeyboard(
                 currentPitch = smoothedPitch,
                 modifier = Modifier.width(50.dp),

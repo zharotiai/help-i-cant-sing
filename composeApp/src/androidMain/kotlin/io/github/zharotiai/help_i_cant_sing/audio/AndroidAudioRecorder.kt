@@ -49,7 +49,6 @@ class AndroidAudioRecorder(private val context: android.content.Context) : Audio
                 Manifest.permission.RECORD_AUDIO
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            // Permission not granted, handle appropriately
             return
         }
         audioRecord = AudioRecord(

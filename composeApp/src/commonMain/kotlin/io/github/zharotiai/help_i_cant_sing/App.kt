@@ -33,7 +33,7 @@ fun App(viewModel: AudioRecorderViewModel?, permissionManager: PermissionManager
         ) {
             if (permissionManager != null) {
                 LaunchedEffect(Unit) {
-                    permissionManager.requestAudioPermission {}
+                    permissionManager.requestAudioPermission{}
                 }
             }
 

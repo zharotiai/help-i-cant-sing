@@ -28,8 +28,6 @@ fun PitchGraph(
     pitch: Float?,
     pitchHistory: List<Float?>,
     modifier: Modifier = Modifier,
-    // --- HOISTED PARAMETERS ---
-    // These are now passed in from the parent (MyPitchScreen)
     verticalScrollState: ScrollState,
     totalCanvasHeight: Dp,
     freqToY: (Float) -> Float
@@ -47,11 +45,9 @@ fun PitchGraph(
         val calculatedHistoryWidth = (dpPerHistoryPoint.value * pitchHistory.size).dp
         val canvasWidth = maxOf(viewportWidth, calculatedHistoryWidth + rightPadding)
 
-        // Horizontal scroll state is still managed internally as it's unique to the graph
         val horizontalScrollState = rememberScrollState()
         val coroutineScope = rememberCoroutineScope()
 
-        // This LaunchedEffect for horizontal scrolling remains here.
         LaunchedEffect(pitchHistory.size) {
             val dpPerHistoryPointPx = with(density) { dpPerHistoryPoint.toPx() }
             val viewportWidthPx = with(density) { viewportWidth.toPx() }

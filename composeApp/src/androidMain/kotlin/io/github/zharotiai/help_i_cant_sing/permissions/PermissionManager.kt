@@ -35,14 +35,13 @@ actual class PermissionManager actual constructor() {
 
     actual fun isAudioPermissionGranted(): Boolean {
         val appContext: Context = AndroidApplicationContext.get()
-        // Use the fully qualified name or ensure Manifest.permission is imported
         return ContextCompat.checkSelfPermission(
             appContext, Manifest.permission.RECORD_AUDIO
         ) == PackageManager.PERMISSION_GRANTED
     }
 
     actual fun shouldShowRationale(): Boolean {
-        return false // As discussed, iOS doesn't have direct equivalent and Android requires Activity context not always available here.
+        return false
     }
 
     actual fun requestAudioPermission(onResult: (Boolean) -> Unit) {

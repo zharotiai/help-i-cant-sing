@@ -16,15 +16,8 @@ import java.io.File
 
 class MainActivity : ComponentActivity() {
 
-    // Make permissionManager nullable and initialize it in onCreate,
-    // then ensure it's accessed safely or after initialization.
-    // We'll initialize the launcher AFTER permissionManager is ready.
     private var permissionManager: PermissionManager? = null
 
-    // The launcher is declared here, but we will assign its callback dynamically
-    // or ensure permissionManager is ready when the callback fires.
-    // For simplicity and directness, we will now initialize it directly within onCreate
-    // to capture the `permissionManager` instance.
     private lateinit var requestAudioPermissionLauncher: ActivityResultLauncher<String>
 
 
@@ -32,17 +25,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        // Initialize the PermissionManager instance first.
         permissionManager = PermissionManager()
 
-        // Now that permissionManager is initialized, we can safely initialize the launcher
-        // and its callback can directly reference the initialized instance.
         requestAudioPermissionLauncher = registerForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { isGranted: Boolean ->
-            // Pass the result to PermissionManager's handler
-            // Use the safe call operator `?.` since permissionManager is nullable,
-            // though at this point in the lifecycle, it should not be null.
             permissionManager?.handlePermissionResult(isGranted)
         }
 
@@ -57,13 +44,4 @@ class MainActivity : ComponentActivity() {
         // Request audio permission on startup
         permissionManager?.requestAudioPermissionFromActivity(this, requestAudioPermissionLauncher) {}
     }
-}
-
-@Preview
-@Composable
-fun AppAndroidPreview() {
-    // Make sure your App composable is defined elsewhere and can be previewed.
-    // This preview function doesn't directly interact with permissions,
-    // as previews typically don't have a live Android context.
-    // App()
 }
