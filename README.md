@@ -1,13 +1,17 @@
-This is a Kotlin Multiplatform project targeting Android, iOS, Desktop.
+# Help I Can't Sing
 
-* `/composeApp` is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-    - `commonMain` is for code that’s common for all targets.
-    - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-      For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-      `iosMain` would be the right folder for such calls.
+Help I Can't Sing is a simple, cross-platform app designed to help you improve your singing pitch control by tracking pitch steadiness in real time.
 
-* `/iosApp` contains iOS applications. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+## Features
+- Pitch Tracking: Record your voice and monitor your singing pitch through a clear waveform display.
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+- Real-Time Feedback: Visualize pitch stability to identify where your voice wavers.
+
+- Beginner-Friendly: Perfect for anyone who wants to develop better pitch accuracy and steadiness, even if you can't sing (yet).
+
+## How It Works
+- Open the app and hit Record.
+
+- Sing into your device’s microphone.
+
+- Watch the waveform to see how steady your pitch is.
